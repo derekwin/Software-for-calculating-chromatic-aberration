@@ -3,6 +3,8 @@ from tkinter import _flatten
 import math
 import numpy as np
 from PIL import Image
+from sympy import solve
+from sympy.abc import x,y,z
 
 
 
@@ -46,20 +48,97 @@ def repair(filepath,file):
             Kr=np.mat([[-0.0002],[0.0033],[0.0057],[0.0031],[0.0043],[-0.0109],[1.3309],[-0.4423],[-0.4569],[35.2079]])
             Kg=np.mat([[0.0024],[0.0083],[-0.0005],[-0.0060],[0.0069],[-0.0065],[-0.5964],[1.2572],[-0.2699],[46.1584]])
             Kb=np.mat([[0.0040],[-0.0123],[-0.0054],[-0.0056],[0.0006],[0.0250],[-0.5630],[-0.4003],[0.9376],[41.1212]])
-            Yr=Y*Kr
+            Yr=Y_array*Kr
             Yr=float(str(Yr).split('[')[2].split(']')[0])
-            Yg=Y*Kg
+            Yg=Y_array*Kg
             Yg = float(str(Yg).split('[')[2].split(']')[0])
-            Yb=Y*Kb
+            Yb=Y_array*Kb
             Yb=float(str(Yb).split('[')[2].split(']')[0])
-            R=-1.236e-07*Yr**4+5.987e-05*Yr**3-0.00907*Yr**2+1.448*Yr-4.617
-            G=-1.834e-07*Yr**4+0.0001069*Yr**3-0.02093*Yr**2+2.55*Yr-33.56
-            B=5.863e-08*Yr**4-2.341e-05*Yr**3+0.003252*Yr**2+0.7967*Yr+4.788
-            outpic[i][j][0]=int(round(R))
+
+            a = solve(-1.236e-07 * x ** 4 + 5.987e-05 * x ** 3 - 0.00907 * x ** 2 + 1.448 * x - 4.617 - Yr, x,
+                      real=True)
+            for k in a:
+                if k.is_real:
+                    if k > 0:
+                        if k < 256:
+                            R = k
+                            print(int(round(R)))
+                else:
+                    continue
+
+            b=solve(-1.834e-07*y**4+0.0001069*y**3-0.02093*y**2+2.55*y-33.56-Yb, y)
+            for k in b:
+                if k.is_real:
+                    if k > 0:
+                        if k < 256:
+                            B = k
+                else:
+                    continue
+
+            c=solve(5.863e-08*z**4-2.341e-05*z**3+0.003252*z**2+0.7967*z+4.788-Yg, z)
+            for k in c:
+                if k.is_real:
+                    if k > 0:
+                        if k < 256:
+                            G = k
+                else:
+                    continue
+
+            outpic[i][j][0] = int(round(R))
             outpic[i][j][1] =int(round(G))
             outpic[i][j][2] =int(round(B))
     repaired_pic=np.array(outpic)
     return repaired_pic
+
+
+def repair_pix(pix):
+    r, g, b = pix
+    Y = [r ** 2, g ** 2, b ** 2, r * g, r * b, b * g, r, g, b, 1]
+    Y_array = np.mat(Y)
+    Kr = np.mat(
+        [[-0.0002], [0.0033], [0.0057], [0.0031], [0.0043], [-0.0109], [1.3309], [-0.4423], [-0.4569], [35.2079]])
+    Kg = np.mat(
+        [[0.0024], [0.0083], [-0.0005], [-0.0060], [0.0069], [-0.0065], [-0.5964], [1.2572], [-0.2699], [46.1584]])
+    Kb = np.mat(
+        [[0.0040], [-0.0123], [-0.0054], [-0.0056], [0.0006], [0.0250], [-0.5630], [-0.4003], [0.9376], [41.1212]])
+    Yr = Y_array * Kr
+    Yr = float(str(Yr).split('[')[2].split(']')[0])
+    Yg = Y_array * Kg
+    Yg = float(str(Yg).split('[')[2].split(']')[0])
+    Yb = Y_array * Kb
+    Yb = float(str(Yb).split('[')[2].split(']')[0])
+    r_R=0
+    r_G=0
+    r_B=0
+    a = solve(-1.236e-07 * x ** 4 + 5.987e-05 * x ** 3 - 0.00907 * x ** 2 + 1.448 * x - 4.617 - Yr, x,
+              real=True)
+    for k in a:
+        if k.is_real:
+            if k > 0:
+                if k < 256:
+                    r_R = k
+        else:
+            continue
+
+    b = solve(-1.834e-07 * y ** 4 + 0.0001069 * y ** 3 - 0.02093 * y ** 2 + 2.55 * y - 33.56 - Yb, y)
+    for k in b:
+        if k.is_real:
+            if k > 0:
+                if k < 256:
+                    r_G = k
+        else:
+            continue
+
+    c = solve(5.863e-08 * z ** 4 - 2.341e-05 * z ** 3 + 0.003252 * z ** 2 + 0.7967 * z + 4.788 - Yg, z)
+    for k in c:
+        if k.is_real:
+            if k > 0:
+                if k < 256:
+                    r_B = k
+        else:
+            continue
+    return int(round(r_R)),int(round(r_G)),int(round(r_B))
+
 #------------------------------------------------------#
 ###用第一张图片做参考图像，对第二张图像进行对齐
 #####基于图像特征对齐，利用ORB寻找对应点
