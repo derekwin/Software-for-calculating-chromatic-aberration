@@ -6,6 +6,7 @@ from sys import exit
 import os
 # import pygame
 import numpy
+import colordistance
 
 class lookwindows(Toplevel):
     def __init__(self):
@@ -14,7 +15,7 @@ class lookwindows(Toplevel):
         self.getpic()
         picsize=Image.open(self.picpath)
         self.framesize_x=picsize.size[0]
-        self.framesize_y=picsize.size[1]+20
+        self.framesize_y=picsize.size[1]+50
         self.getresult_array()
         self.geometry(str(self.framesize_x)+"x"+str(self.framesize_y))
         self.resizable(False, False)
@@ -23,11 +24,17 @@ class lookwindows(Toplevel):
 
 #获取色差值
 #事件绑定
+        filename = (self.picpath.split('/')[-1]).split('.')[0]
+        im = Image.open(self.picpath)
+        pic_array = im.load()
         def callback(event):
             print('当前位置为：', event.x, event.y)
-            if event.y <= self.framesize_y-20:
+            if event.y <= self.framesize_y-50:
                 if event.x <= self.framesize_x:
                     self.cecha.set(self.result_array[event.y,event.x])
+                    print(pic_array[event.x,event.y])
+                    R,G,B=colordistance.repair_pix(pic_array[event.x,event.y])
+                    self.cecha1.set(str(R)+','+str(G)+','+str(B))
                 else:
                     pass
             else:
@@ -54,15 +61,18 @@ class lookwindows(Toplevel):
         im.close()
         #
         picpath=filename + '.gif'
-        self.frame=Frame(self,background='lightgreen',width=self.framesize_x,height=self.framesize_y-20)
+        self.frame=Frame(self,background='lightgreen',width=self.framesize_x,height=self.framesize_y-50)
 
         self.frame.grid(row=0,column=0)
         self.pic=PhotoImage(file=picpath)
-        self.picshow=Label(self,image=self.pic,background='lightgray',width=self.framesize_x,height=self.framesize_y-20)
+        self.picshow=Label(self,image=self.pic,background='lightgray',width=self.framesize_x,height=self.framesize_y-50)
         self.picshow.grid(row=0,column=0)
         self.cecha=StringVar()
         self.cechadata=Label(self,textvariable=self.cecha)
         self.cechadata.grid(row=1,column=0)
+        self.cecha1 = StringVar()
+        self.cechadata1 = Label(self, textvariable=self.cecha1)
+        self.cechadata1.grid(row=2, column=0)
 
 
     #选择基准图片
